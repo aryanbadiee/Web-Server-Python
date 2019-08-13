@@ -1,9 +1,10 @@
-import socket  # Networking support
-import time    # Current time
+import socket       # Networking support
+import time         # Current time
+import _thread      # multi-threading
 
-myPort = 300    # your own port
-myHost = ""
-myRoot = "public/"
+myPort = 300            # your own port
+myHost = ""             # your own host
+myRoot = "public/"      # your own root (folder for client-side code)
 
 
 class Server:
@@ -171,6 +172,19 @@ class Server:
 
 
 # *********************************************************************
+def exit_process():
+    while True:
+        cmd = input()       # listen to exit form process
+        if cmd == "$exit":
+            import os
+            os._exit(1)     # exit from program
+# *********************************************************************
+
+
+_thread.start_new_thread(exit_process, ())  # for calling exit_process in other thread
+
 print("Starting Web Server")
-s = Server()        # construct server object
+s = Server()            # construct server object
 s.activate_server()     # acquire the socket
+
+# exit from program with typing $exit in console
