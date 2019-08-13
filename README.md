@@ -8,3 +8,7 @@ Points:
 * light
 * support from multi-threading
 * with the client-side code(for testing!)
+
+WIP:
+
+* supporting POST Method
