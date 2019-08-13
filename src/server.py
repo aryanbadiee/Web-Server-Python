@@ -99,6 +99,7 @@ class Server:
 
                 # split on space "GET /file.html" -into-> ('GET','file.html',...)
                 file_requested = string.split(' ')[1]   # get 2nd element
+                response_content = b""   # for body of http response(it's binary)
 
                 if file_requested == '/':  # in case no file is specified by the browser
                     file_requested = 'index.html'   # load index.html by default
