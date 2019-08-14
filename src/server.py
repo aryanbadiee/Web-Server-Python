@@ -102,7 +102,10 @@ class Server:
                 file_requested = string.split(' ')[1]   # get 2nd element
                 response_content = b""   # for body of http response(it's binary)
 
-                if file_requested == '/':  # in case no file is specified by the browser
+                if file_requested == '/' or \
+                   file_requested == '/index' or \
+                   file_requested == '/main':      # in case no file is specified by the browser
+
                     file_requested = 'index.html'   # load index.html by default
 
                     # file_requested = self.www_dir + file_requested

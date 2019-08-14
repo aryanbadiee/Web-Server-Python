@@ -11,4 +11,4 @@ Points:
 
 WIP:
 
-* supporting POST Method
+* supporting from POST Method
