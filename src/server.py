@@ -41,19 +41,10 @@ class Server:
                 import sys
                 sys.exit(1)
 
-        print("Server successfully acquired the socket with port:", self.port)
+        print("Server acquired successfully the socket with port:", self.port)
         self._wait_for_connections()
 
-    def shutdown(self):
-        """ Shut down the server """
-        try:
-            print("Shutting down the server")
-            s.socket.shutdown(socket.SHUT_RDWR)
-
-        except Exception as e:
-            print("Warning: could not shut down the socket. Maybe it was already closed?", e)
-
-    def _gen_headers(self,  code):
+    def _gen_headers(self, code):
         """ Generates HTTP response Headers. Omits the first line! """
 
         # determine response code
@@ -73,10 +64,19 @@ class Server:
 
         return h
 
+    def shutdown(self):
+        """ Shut down the server """
+        try:
+            print("Shutting down the server")
+            s.socket.shutdown(socket.SHUT_RDWR)
+
+        except Exception as e:
+            print("Warning: could not shut down the socket. Maybe it was already closed?", e)
+
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
         while True:
-            print("Awaiting New connection")
+            print("Awaiting New Connection")
             print("-----------------------")
             self.socket.listen(5)   # maximum number of queued connections
 
@@ -94,8 +94,10 @@ class Server:
             print("Method: ", request_method)
             print("Request body: ", string)
 
+            # body_data = self.read_body_data(string)   # body_data: str
+
             # if string[0:3] == 'GET':
-            if (request_method == 'GET') | (request_method == 'HEAD'):
+            if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
                 # file_requested = string[4:]
 
                 # split on space "GET /file.html" -into-> ('GET','file.html',...)
@@ -115,7 +117,7 @@ class Server:
                     try:
                         file_requested = self.dir + file_requested      # public/...
                         file_handler = open(file_requested, 'rb')
-                        if request_method == 'GET':  # only read the file when GET
+                        if request_method == 'GET' or request_method == 'POST':
                             response_content = file_handler.read()  # read file content
                         file_handler.close()
 
@@ -125,13 +127,13 @@ class Server:
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
                         response_headers = self._gen_headers(404)
 
-                        if request_method == 'GET':
+                        if request_method == 'GET' or request_method == 'POST':
                             response_content = \
                                 b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                    server_response = response_headers.encode()     # return headers for GET and HEAD
-                    if request_method == 'GET':
-                        server_response += response_content  # return additional content for GET only
+                    server_response = response_headers.encode()     # return headers for GET, POST and HEAD
+                    if request_method == 'GET' or request_method == 'POST':
+                        server_response += response_content  # return additional content for GET, POST only
 
                     connection.send(server_response)
                     print("Closing connection with client")
@@ -145,7 +147,7 @@ class Server:
                     try:
                         file_requested = self.dir + file_requested      # public/...
                         file_handler = open(file_requested, 'rb')
-                        if request_method == 'GET':  # only read the file when GET
+                        if request_method == 'GET' or request_method == 'POST':
                             response_content = file_handler.read()  # read file content
                         file_handler.close()
 
@@ -154,13 +156,13 @@ class Server:
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
                         response_headers = self._gen_headers(404)
 
-                        if request_method == 'GET':
+                        if request_method == 'GET' or request_method == 'POST':
                             response_content = \
                                 b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                    server_response = response_headers.encode()  # return headers for GET and HEAD
-                    if request_method == 'GET':
-                        server_response += response_content  # return additional content for GET only
+                    server_response = response_headers.encode()  # return headers for GET, Post and HEAD
+                    if request_method == 'GET' or request_method == 'POST':
+                        server_response += response_content  # return additional content for GET, POST only
 
                     connection.send(server_response)
                     print("Closing connection with client")
@@ -172,6 +174,21 @@ class Server:
         s.shutdown()    # shut down the server
         import sys
         sys.exit(1)
+
+    # for getting data from body of HTTP:
+    def read_body_data(self, string: str) -> str:
+        lines = string.splitlines()
+
+        result = ""             # for return
+        _next = False
+
+        for line in lines:
+            if line == "":      # means empty line between header and body in HTTP
+                _next = True
+            elif _next:
+                result += line
+
+        return result
 
 
 # *********************************************************************
