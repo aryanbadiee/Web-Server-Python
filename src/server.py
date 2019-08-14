@@ -187,7 +187,6 @@ def exit_process():
 _thread.start_new_thread(exit_process, ())  # for calling exit_process in other thread
 
 print("Starting Web Server")
+print("if you want to exit from program just write \"$exit\" in console!")
 s = Server()            # construct server object
 s.activate_server()     # acquire the socket
-
-# exit from program with typing $exit in console
