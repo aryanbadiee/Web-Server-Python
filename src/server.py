@@ -44,7 +44,7 @@ class Server:
         print("Server acquired successfully the socket with port:", self.port)
         self._wait_for_connections()
 
-    def _gen_headers(self, code):
+    def _gen_headers(self, code, _type: str=None):
         """ Generates HTTP response Headers. Omits the first line! """
 
         # determine response code
@@ -54,13 +54,23 @@ class Server:
         elif code == 404:
             h = 'HTTP/1.1 404 Not Found\n'
 
-        # write further headers
-        current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-        h += 'Date: ' + current_date + '\n'
-        h += 'Server: Simple-Python-HTTP-Server\n'
-        h += 'Connection: close\n\n'
-        # signal that the connection will be closed after completing the request
-        # \n\n, it's very important between for header and body(because of the http rules)
+        if _type is None:
+            # write further headers
+            current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+            h += 'Date: ' + current_date + '\n'
+            h += 'Server: Simple-Python-HTTP-Server\n'
+            h += 'Connection: close\n\n'
+            # signal that the connection will be closed after completing the request
+            # \n\n, it's very important between for header and body(because of the http rules)
+        else:
+            # write further headers
+            current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+            h += 'Date: ' + current_date + '\n'
+            h += 'Content-Type: ' + _type + '\n'
+            h += 'Server: Simple-Python-HTTP-Server\n'
+            h += 'Connection: close\n\n'
+            # signal that the connection will be closed after completing the request
+            # \n\n, it's very important between for header and body(because of the http rules)
 
         return h
 
@@ -121,7 +131,8 @@ class Server:
                             response_content = file_handler.read()  # read file content
                         file_handler.close()
 
-                        response_headers = self._gen_headers(200)
+                        response_headers = self._gen_headers(200,
+                                                             self.get_content_type(file_requested))
 
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
@@ -151,7 +162,8 @@ class Server:
                             response_content = file_handler.read()  # read file content
                         file_handler.close()
 
-                        response_headers = self._gen_headers(200)
+                        response_headers = self._gen_headers(200, 
+                                                             self.get_content_type(file_requested))
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
                         response_headers = self._gen_headers(404)
@@ -167,6 +179,14 @@ class Server:
                     connection.send(server_response)
                     print("Closing connection with client")
                     connection.close()
+
+    def get_content_type(self, file_requested: str) -> str:
+        if file_requested.__contains__(".htm") or file_requested.__contains__(".html"):
+            return "text/html"
+        elif file_requested.__contains__(".css"):
+            return "text/css"
+        elif file_requested.__contains__(".js"):
+            return "text/javascript"
 
     def graceful_shutdown(self, dummy):
         """ This function shuts down the server. It's triggered
