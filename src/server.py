@@ -126,10 +126,9 @@ class Server:
                     # Load file content
                     try:
                         file_requested = self.dir + file_requested      # public/...
-                        file_handler = open(file_requested, 'rb')
-                        if request_method == 'GET' or request_method == 'POST':
-                            response_content = file_handler.read()  # read file content
-                        file_handler.close()
+                        with open(file_requested, "rb") as file_handler:
+                            if request_method == "GET" or request_method == "POST":
+                                response_content = file_handler.read()
 
                         response_headers = self._gen_headers(200,
                                                              self.get_content_type(file_requested))
@@ -157,12 +156,11 @@ class Server:
                     # Load file content:
                     try:
                         file_requested = self.dir + file_requested      # public/...
-                        file_handler = open(file_requested, 'rb')
-                        if request_method == 'GET' or request_method == 'POST':
-                            response_content = file_handler.read()  # read file content
-                        file_handler.close()
+                        with open(file_requested, "rb") as file_handler:
+                            if request_method == "GET" or request_method == "POST":
+                                response_content = file_handler.read()
 
-                        response_headers = self._gen_headers(200, 
+                        response_headers = self._gen_headers(200,
                                                              self.get_content_type(file_requested))
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
