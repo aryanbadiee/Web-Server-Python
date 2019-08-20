@@ -1,3 +1,5 @@
+# @author -> https://www.github.com/aryanbadiee
+
 import socket       # Networking support
 import time         # Current time
 import _thread      # multi-threading
