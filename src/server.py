@@ -187,6 +187,13 @@ class Server:
             return "text/css"
         elif file_requested.__contains__(".js"):
             return "text/javascript"
+        elif file_requested.__contains__(".png"):
+            return "image/png"
+        elif file_requested.__contains__(".jpg") or file_requested.__contains__(".jpeg"):
+            return "image/jpeg"
+        elif file_requested.__contains__(".mp3"):
+            return "audio/mpeg"
+        # You can add support for other file formats - Like above!
 
     def graceful_shutdown(self, dummy):
         """ This function shuts down the server. It's triggered

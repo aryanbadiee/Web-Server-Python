@@ -8,4 +8,4 @@ Points:
 * light
 * support from multi-threading
 * with the client-side code(for testing!)
-* supporting from GET & POST Method
+* support for GET & POST Method
