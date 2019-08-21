@@ -9,6 +9,9 @@
 <style>
 body,h1 {font-family: "Raleway", sans-serif}
 body, html {height: 100%}
+figure {
+  margin: 0;
+}
 .bgimg {
   background-image: url('img/counter.jpg');
   min-height: 100%;
@@ -32,9 +35,15 @@ a:active {
     </a>
     <hr class="w3-border-grey" style="margin:auto;margin-bottom:10px;width:50%">
     <div style="text-align: center;">
-      <audio controls>
-        <source src="media/fou.mp3" type="audio/mpeg">
-      </audio>
+      <figure>
+        <figcaption style="color: chartreuse">Listen to the Shahin Najafi:</figcaption>
+        <audio
+            controls
+            src="media/fou.mp3">
+                Your browser does not support the
+                <code>audio</code> element.
+        </audio>
+      </figure>
     </div>
   </div>
   <div class="w3-display-bottomleft w3-padding-large" >
