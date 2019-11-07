@@ -80,7 +80,7 @@ class Server:
         """ Shut down the server """
         try:
             print("Shutting down the server")
-            s.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.shutdown(socket.SHUT_RDWR)
 
         except Exception as e:
             print("Warning: could not shut down the socket. Maybe it was already closed?", e)
@@ -229,6 +229,7 @@ def exit_process():
 
 
 _thread.start_new_thread(exit_process, ())  # for calling exit_process in other thread
+# () is an empty tuple
 
 print("Starting Web Server")
 print("if you want to exit from program just write \"$exit\" in console!")
