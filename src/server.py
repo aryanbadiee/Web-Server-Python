@@ -4,7 +4,7 @@ import socket       # Networking support
 import time         # Current time
 import _thread      # multi-threading
 
-myPort = 300            # your own port
+myPort = 80            # your own port
 myHost = ""             # your own host
 myRoot = "public/"      # your own root (folder for client-side code)
 
