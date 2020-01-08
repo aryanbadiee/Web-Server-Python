@@ -9,6 +9,69 @@ myHost = ""             # your own host
 myRoot = "public/"      # your own root (folder for client-side code)
 
 
+def get_content_type(file_requested: str) -> str:
+    if file_requested.__contains__(".htm") or file_requested.__contains__(".html"):
+        return "text/html"
+    elif file_requested.__contains__(".css"):
+        return "text/css"
+    elif file_requested.__contains__(".js"):
+        return "text/javascript"
+    elif file_requested.__contains__(".png"):
+        return "image/png"
+    elif file_requested.__contains__(".jpg") or file_requested.__contains__(".jpeg"):
+        return "image/jpeg"
+    elif file_requested.__contains__(".mp3"):
+        return "audio/mpeg"
+    # You can add support for other file formats - Like above!
+
+
+# for getting data from body of HTTP:
+def read_body_data(string: str) -> str:
+    lines = string.splitlines()
+
+    result = ""             # for return
+    _next = False
+
+    for line in lines:
+        if line == "":      # means empty line between header and body in HTTP
+            _next = True
+        elif _next:
+            result += line
+
+    return result
+
+
+def _gen_headers(code, _type: str=None):
+    """ Generates HTTP response Headers. Omits the first line! """
+
+    # determine response code
+    h = ''
+    if code == 200:
+        h = 'HTTP/1.1 200 OK\n'
+    elif code == 404:
+        h = 'HTTP/1.1 404 Not Found\n'
+
+    if _type is None:
+        # write further headers
+        current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        h += 'Date: ' + current_date + '\n'
+        h += 'Server: Simple-Python-HTTP-Server\n'
+        h += 'Connection: close\n\n'
+        # signal that the connection will be closed after completing the request
+        # \n\n, it's very important between for header and body(because of the http rules)
+    else:
+        # write further headers
+        current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        h += 'Date: ' + current_date + '\n'
+        h += 'Content-Type: ' + _type + '\n'
+        h += 'Server: Simple-Python-HTTP-Server\n'
+        h += 'Connection: close\n\n'
+        # signal that the connection will be closed after completing the request
+        # \n\n, it's very important between for header and body(because of the http rules)
+
+    return h
+
+
 class Server:
     """ Class describing a simple HTTP server objects."""
     
@@ -46,36 +109,6 @@ class Server:
 
         print("Server acquired successfully the socket with port:", self.port)
         self._wait_for_connections()
-
-    def _gen_headers(self, code, _type: str=None):
-        """ Generates HTTP response Headers. Omits the first line! """
-
-        # determine response code
-        h = ''
-        if code == 200:
-            h = 'HTTP/1.1 200 OK\n'
-        elif code == 404:
-            h = 'HTTP/1.1 404 Not Found\n'
-
-        if _type is None:
-            # write further headers
-            current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-            h += 'Date: ' + current_date + '\n'
-            h += 'Server: Simple-Python-HTTP-Server\n'
-            h += 'Connection: close\n\n'
-            # signal that the connection will be closed after completing the request
-            # \n\n, it's very important between for header and body(because of the http rules)
-        else:
-            # write further headers
-            current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
-            h += 'Date: ' + current_date + '\n'
-            h += 'Content-Type: ' + _type + '\n'
-            h += 'Server: Simple-Python-HTTP-Server\n'
-            h += 'Connection: close\n\n'
-            # signal that the connection will be closed after completing the request
-            # \n\n, it's very important between for header and body(because of the http rules)
-
-        return h
 
     def shutdown(self):
         """ Shut down the server """
@@ -133,12 +166,12 @@ class Server:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
 
-                        response_headers = self._gen_headers(200,
-                                                             self.get_content_type(file_requested))
+                        response_headers = _gen_headers(200,
+                                                        get_content_type(file_requested))
 
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
-                        response_headers = self._gen_headers(404)
+                        response_headers = _gen_headers(404)
 
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
@@ -163,11 +196,11 @@ class Server:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
 
-                        response_headers = self._gen_headers(200,
-                                                             self.get_content_type(file_requested))
+                        response_headers = _gen_headers(200,
+                                                        get_content_type(file_requested))
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
-                        response_headers = self._gen_headers(404)
+                        response_headers = _gen_headers(404)
 
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
@@ -181,42 +214,12 @@ class Server:
                     print("Closing connection with client")
                     connection.close()
 
-    def get_content_type(self, file_requested: str) -> str:
-        if file_requested.__contains__(".htm") or file_requested.__contains__(".html"):
-            return "text/html"
-        elif file_requested.__contains__(".css"):
-            return "text/css"
-        elif file_requested.__contains__(".js"):
-            return "text/javascript"
-        elif file_requested.__contains__(".png"):
-            return "image/png"
-        elif file_requested.__contains__(".jpg") or file_requested.__contains__(".jpeg"):
-            return "image/jpeg"
-        elif file_requested.__contains__(".mp3"):
-            return "audio/mpeg"
-        # You can add support for other file formats - Like above!
-
-    def graceful_shutdown(self, dummy):
+    def graceful_shutdown(self):
         """ This function shuts down the server. It's triggered
         by SIGINT signal """
-        s.shutdown()    # shut down the server
+        self.shutdown()    # shut down the server
         import sys
         sys.exit(1)
-
-    # for getting data from body of HTTP:
-    def read_body_data(self, string: str) -> str:
-        lines = string.splitlines()
-
-        result = ""             # for return
-        _next = False
-
-        for line in lines:
-            if line == "":      # means empty line between header and body in HTTP
-                _next = True
-            elif _next:
-                result += line
-
-        return result
 
 
 # *********************************************************************
@@ -227,7 +230,7 @@ def exit_process():
             import os
             os._exit(1)         # exit from program
         elif cmd == "$time":    # getting time from server
-            print(time.strftime("%A, %d/%B/%Y - %H:%M:%S"))
+            print(time.strftime("%A, %m/%d/%Y - %H:%M:%S"))
 # *********************************************************************
 
 
