@@ -222,10 +222,12 @@ class Server:
 # *********************************************************************
 def exit_process():
     while True:
-        cmd = input()       # listen to exit form process
+        cmd = input()
         if cmd == "$exit":
             import os
-            os._exit(1)     # exit from program
+            os._exit(1)         # exit from program
+        elif cmd == "$time":    # getting time from server
+            print(time.strftime("%A, %d/%B/%Y - %H:%M:%S"))
 # *********************************************************************
 
 
