@@ -4,7 +4,7 @@ import socket       # Networking support
 import time         # Current time
 import _thread      # multi-threading
 
-myPort = 80            # your own port
+myPort = 80             # your own port
 myHost = ""             # your own host
 myRoot = "public/"      # your own root (folder for client-side code)
 
@@ -22,7 +22,8 @@ class Server:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def activate_server(self):
-        try:    # user provided in the __init__() port may be unavailable
+        # user provided in the __init__() port may be unavailable:
+        try:
             self.socket.bind((self.host, self.port))
         except Exception as e:
             print("Warning: Could not acquire port:", self.port, "\n")
@@ -87,12 +88,12 @@ class Server:
 
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
+        self.socket.listen(5)  # maximum number of queued connections
         while True:
             print("Awaiting New Connection")
             print("-----------------------")
-            self.socket.listen(5)   # maximum number of queued connections
 
-            (connection, address) = self.socket.accept()
+            connection, address = self.socket.accept()
             # connection - socket
             # address - client address
 
@@ -102,7 +103,7 @@ class Server:
             string = bytes.decode(data)     # decode it to string
 
             # determine request method  (HEAD and GET are supported)
-            request_method = string.split(' ')[0]
+            request_method = string.split()[0]          # method of request
             print("Method: ", request_method)
             print("Request body: ", string)
 
