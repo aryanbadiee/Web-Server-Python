@@ -1,12 +1,12 @@
 # @author -> https://www.github.com/aryanbadiee
 
-import socket       # Networking support
-import time         # Current time
-import _thread      # multi-threading
+import socket  # Networking support
+import time  # Current time
+import _thread  # multi-threading
 
-myPort = 80             # your own port
-myHost = ""             # your own host
-myRoot = "public/"      # your own root (folder for client-side code)
+myPort = 80  # your own port
+myHost = ""  # your own host
+myRoot = "public/"  # your own root (folder for client-side code)
 
 
 def get_content_type(file_requested: str) -> str:
@@ -29,11 +29,11 @@ def get_content_type(file_requested: str) -> str:
 def read_body_data(string: str) -> str:
     lines = string.splitlines()
 
-    result = ""             # for return
+    result = ""  # for return
     _next = False
 
     for line in lines:
-        if line == "":      # means empty line between header and body in HTTP
+        if line == "":  # means empty line between header and body in HTTP
             _next = True
         elif _next:
             result += line
@@ -41,7 +41,7 @@ def read_body_data(string: str) -> str:
     return result
 
 
-def _gen_headers(code, _type: str=None):
+def gen_headers(code, _type: str = None):
     """ Generates HTTP response Headers. Omits the first line! """
 
     # determine response code
@@ -74,12 +74,12 @@ def _gen_headers(code, _type: str=None):
 
 class Server:
     """ Class describing a simple HTTP server objects."""
-    
+
     def __init__(self):
         """ Constructor """
-        self.host = myHost           # <-- works on all available network interfaces
+        self.host = myHost  # <-- works on all available network interfaces
         self.port = myPort
-        self.dir = myRoot            # Directory where web-page files are stored
+        self.dir = myRoot  # Directory where web-page files are stored
 
         """ Attempts to acquire the socket and launch the server """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -109,7 +109,7 @@ class Server:
 
         print("Server acquired successfully the socket with port:", self.port)
         print("----------------------------------------")
-        self._wait_for_connections()
+        self.wait_for_connections()
 
     def shutdown(self):
         """ Shut down the server """
@@ -120,7 +120,7 @@ class Server:
         except Exception as e:
             print("Warning: could not shut down the socket. Maybe it was already closed?", e)
 
-    def _wait_for_connections(self):
+    def wait_for_connections(self):
         """ Main loop awaiting connections """
         self.socket.listen(5)  # maximum number of queued connections
         while True:
@@ -132,19 +132,19 @@ class Server:
 
             print("Got connection from:", address)
 
-            data = connection.recv(1024)    # receive data from client
-            string = bytes.decode(data)     # decode it to string
+            data = connection.recv(1024)  # receive data from client
+            string = bytes.decode(data)  # decode it to string
 
             # determine request method  (HEAD and GET are supported)
-            request_method = string.split()[0]          # method of request
+            request_method = string.split()[0]  # method of request
             print("Method: ", request_method)
             print("*** HTTP DATA RECEIVED ***", string, sep='\n', end="\n\n")
 
-            body_data = read_body_data(string)   # body_data: str
+            body_data = read_body_data(string)  # body_data: str
             if (index_of_variable := body_data.find("text=")) != -1:
                 index_of_value = index_of_variable + len("text=")
                 client_msg = body_data[index_of_value:]
-                header_resp = _gen_headers(200)
+                header_resp = gen_headers(200)
                 body_resp = client_msg
                 resp = header_resp + body_resp
                 resp = resp.encode("UTF-8")
@@ -159,37 +159,37 @@ class Server:
                 # file_requested = string[4:]
 
                 # split on space "GET /file.html" -into-> ('GET','file.html',...)
-                file_requested = string.split()[1]   # getting 2nd element
-                response_content = b""   # for body of http response(it's binary)
+                file_requested = string.split()[1]  # getting 2nd element
+                response_content = b""  # for body of http response(it's binary)
 
                 if file_requested == '/' or \
-                   file_requested == '/index' or \
-                   file_requested == '/main':       # in case no file is specified by the browser
+                        file_requested == '/index' or \
+                        file_requested == '/main':  # in case no file is specified by the browser
 
-                    file_requested = 'index.html'   # load index.html by default
+                    file_requested = 'index.html'  # load index.html by default
 
                     # file_requested = self.www_dir + file_requested
                     print("Serving web page [", file_requested, "]")
 
                     # Load file content
                     try:
-                        file_requested = self.dir + file_requested      # public/...
+                        file_requested = self.dir + file_requested  # public/...
                         with open(file_requested, "rb") as file_handler:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
 
-                        response_headers = _gen_headers(200,
-                                                        get_content_type(file_requested))
+                        response_headers = gen_headers(200,
+                                                       get_content_type(file_requested))
 
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
-                        response_headers = _gen_headers(404)
+                        response_headers = gen_headers(404)
 
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
                                 b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                    server_response = response_headers.encode()     # return headers for GET, POST and HEAD
+                    server_response = response_headers.encode()  # return headers for GET, POST and HEAD
                     if request_method == 'GET' or request_method == 'POST':
                         server_response += response_content  # return additional content for GET, POST only
 
@@ -198,21 +198,21 @@ class Server:
                     connection.close()
 
                 else:
-                    file_requested = file_requested[1:]     # Remove '/' from first statement
+                    file_requested = file_requested[1:]  # Remove '/' from first statement
                     print("Serving web page [", file_requested, "]")
 
                     # Load file content:
                     try:
-                        file_requested = self.dir + file_requested      # public/...
+                        file_requested = self.dir + file_requested  # public/...
                         with open(file_requested, "rb") as file_handler:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
 
-                        response_headers = _gen_headers(200,
-                                                        get_content_type(file_requested))
+                        response_headers = gen_headers(200,
+                                                       get_content_type(file_requested))
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
-                        response_headers = _gen_headers(404)
+                        response_headers = gen_headers(404)
 
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
@@ -231,7 +231,7 @@ class Server:
     def graceful_shutdown(self):
         """ This function shuts down the server. It's triggered
         by SIGINT signal """
-        self.shutdown()    # shut down the server
+        self.shutdown()  # shut down the server
         import sys
         sys.exit(1)
 
@@ -242,9 +242,11 @@ def exit_process():
         cmd = input()
         if cmd == "$exit":
             import os
-            os._exit(1)         # exit from program
-        elif cmd == "$time":    # getting time from server
+            os._exit(1)  # exit from program
+        elif cmd == "$time":  # getting time from server
             print(time.strftime("%A, %m/%d/%Y - %H:%M:%S"))
+
+
 # *********************************************************************
 
 
@@ -253,5 +255,5 @@ _thread.start_new_thread(exit_process, ())  # for calling exit_process in other 
 
 print("Starting Web Server")
 print("if you want to exit from program just write \"$exit\" in console!")
-s = Server()            # construct server object
-s.activate_server()     # acquire the socket
+s = Server()  # construct server object
+s.activate_server()  # acquire the socket
