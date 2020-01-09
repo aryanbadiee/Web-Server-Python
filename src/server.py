@@ -140,20 +140,6 @@ class Server:
             print("Method: ", request_method)
             print("*** HTTP DATA RECEIVED ***", string, sep='\n', end="\n\n")
 
-            body_data = read_body_data(string)  # body_data: str
-            if (index_of_variable := body_data.find("text=")) != -1:
-                index_of_value = index_of_variable + len("text=")
-                client_msg = body_data[index_of_value:]
-                header_resp = gen_headers(200)
-                body_resp = client_msg
-                resp = header_resp + body_resp
-                resp = resp.encode("UTF-8")
-
-                connection.send(resp)
-                connection.close()
-                print("----------------------------------------")
-                continue
-
             # if string[0:3] == 'GET':
             if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
                 # file_requested = string[4:]
@@ -197,8 +183,25 @@ class Server:
                     print("Closing connection with client")
                     connection.close()
 
+                elif file_requested == "/msg":
+                    data_of_body = read_body_data(string)  # body_data: str
+                    if (index_of_variable := data_of_body.find("text=")) != -1:
+                        index_of_value = index_of_variable + len("text=")
+                        client_msg = data_of_body[index_of_value:]
+
+                        header_resp = gen_headers(200)
+                        body_resp = client_msg
+
+                        resp = header_resp + body_resp
+                        resp = resp.encode("UTF-8")
+
+                        connection.send(resp)
+                    connection.close()
+
                 else:
+
                     file_requested = file_requested[1:]  # Remove '/' from first statement
+
                     print("Serving web page [", file_requested, "]")
 
                     # Load file content:

@@ -75,7 +75,7 @@ a:active {
       document.getElementById("resp").innerHTML = resp;
       startSleep(2000);   // waiting 2 seconds
     };
-    xhttp.open("POST", "/", true);
+    xhttp.open("POST", "/msg", true);
     xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");    // for setting data in form
     xhttp.send("text=" + "Hi");
   }
