@@ -108,6 +108,7 @@ class Server:
                 sys.exit(1)
 
         print("Server acquired successfully the socket with port:", self.port)
+        print("----------------------------------------")
         self._wait_for_connections()
 
     def shutdown(self):
@@ -124,7 +125,6 @@ class Server:
         self.socket.listen(5)  # maximum number of queued connections
         while True:
             print("Awaiting New Connection")
-            print("-----------------------")
 
             connection, address = self.socket.accept()
             # connection - socket
@@ -138,21 +138,33 @@ class Server:
             # determine request method  (HEAD and GET are supported)
             request_method = string.split()[0]          # method of request
             print("Method: ", request_method)
-            print("Request body: ", string)
+            print("*** HTTP DATA RECEIVED ***", string, sep='\n', end="\n\n")
 
-            # body_data = self.read_body_data(string)   # body_data: str
+            body_data = read_body_data(string)   # body_data: str
+            if (index_of_variable := body_data.find("text=")) != -1:
+                index_of_value = index_of_variable + len("text=")
+                client_msg = body_data[index_of_value:]
+                header_resp = _gen_headers(200)
+                body_resp = client_msg
+                resp = header_resp + body_resp
+                resp = resp.encode("UTF-8")
+
+                connection.send(resp)
+                connection.close()
+                print("----------------------------------------")
+                continue
 
             # if string[0:3] == 'GET':
             if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
                 # file_requested = string[4:]
 
                 # split on space "GET /file.html" -into-> ('GET','file.html',...)
-                file_requested = string.split(' ')[1]   # get 2nd element
+                file_requested = string.split()[1]   # getting 2nd element
                 response_content = b""   # for body of http response(it's binary)
 
                 if file_requested == '/' or \
                    file_requested == '/index' or \
-                   file_requested == '/main':      # in case no file is specified by the browser
+                   file_requested == '/main':       # in case no file is specified by the browser
 
                     file_requested = 'index.html'   # load index.html by default
 
@@ -213,6 +225,8 @@ class Server:
                     connection.send(server_response)
                     print("Closing connection with client")
                     connection.close()
+
+                print("----------------------------------------")
 
     def graceful_shutdown(self):
         """ This function shuts down the server. It's triggered

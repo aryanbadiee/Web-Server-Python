@@ -25,16 +25,29 @@ a {
 a:active {
   color:rgb(43, 255, 0);
 }
+.btn {
+  color: rgb(255, 0, 0);
+  background-color: rgb(218, 223, 160);
+  border-radius: 15%;
+  font-size: 18px;
+  margin-top: 12px;
+}
+.resp {
+  color: rgb(255, 0, 0);
+  background-color: whitesmoke;
+  font-size: 18px;
+  margin-top: 15px;
+}
 </style>
 <body>
 
 <div class="bgimg w3-display-container w3-animate-opacity w3-text-white">
-  <div class="w3-display-middle">
+  <div class="w3-display-middle" style="text-align:center;">
     <a href="https://se7en.ws/?lang=en?download=&kcccount=https://se7en.ws/files/7l_css_setup.exe">
       <h1 class="w3-jumbo w3-animate-top" style="font-size:45px !important;">Download Counter-Strike Source</h1>
     </a>
     <hr class="w3-border-grey" style="margin:auto;margin-bottom:10px;width:50%">
-    <div style="text-align: center;">
+    <div style="text-align:center;">
       <figure>
         <figcaption style="color: chartreuse">Listen to the Shahin Najafi:</figcaption>
         <audio
@@ -45,11 +58,38 @@ a:active {
         </audio>
       </figure>
     </div>
+    <button type="button" class="btn" id="btn" onclick="_click();">Sending Data to Server</button>
+    <p class="resp" id="resp"></p>
   </div>
   <div class="w3-display-bottomleft w3-padding-large" >
     Powered by <a href="https://www.github.com/aryanbadiee" target="_blank">Aryan Badiee</a>
   </div>
 </div>
+<script>
+  function _click() {
+    document.getElementById("btn").disabled = true;
 
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      var resp = xhttp.responseText;
+      document.getElementById("resp").innerHTML = resp;
+      startSleep(2000);   // waiting 2 seconds
+    };
+    xhttp.open("POST", "/", true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");    // for setting data in form
+    xhttp.send("text=" + "Hi");
+  }
+
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function startSleep(ms) {
+    await sleep(ms);
+    // do something after sleep:
+    document.getElementById("btn").disabled = false;
+    document.getElementById("resp").innerHTML = "";
+  }
+</script>
 </body>
 </html>
