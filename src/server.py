@@ -4,6 +4,7 @@ import socket  # Networking support
 import time  # Current time
 import _thread  # multi-threading
 
+
 myPort = 80  # your own port
 myHost = ""  # your own host
 myRoot = "public/"  # your own root (folder for client-side code)
@@ -83,6 +84,10 @@ class Server:
 
         """ Attempts to acquire the socket and launch the server """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # SOCK_STREAM = TCP Protocol
+        # SOCK_DGRAM = UDP Protocol
+        # AF_INET = using ipv4
+        # AF_INET6 = using ipv6
 
     def activate_server(self):
         # user provided in the __init__() port may be unavailable:
@@ -135,17 +140,13 @@ class Server:
             data = connection.recv(1024)  # receive data from client
             string = bytes.decode(data)  # decode it to string
 
-            # determine request method  (HEAD and GET are supported)
             request_method = string.split()[0]  # method of request
             print("Method: ", request_method)
             print("*** HTTP DATA RECEIVED ***", string, sep='\n', end="\n\n")
 
-            # if string[0:3] == 'GET':
             if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
-                # file_requested = string[4:]
 
-                # split on space "GET /file.html" -into-> ('GET','file.html',...)
-                file_requested = string.split()[1]  # getting 2nd element
+                file_requested = string.split()[1]  # getting 2nd element(request of client)
                 response_content = b""  # for body of http response(it's binary)
 
                 if file_requested == '/' or \
@@ -199,8 +200,7 @@ class Server:
                     connection.close()
 
                 else:
-
-                    file_requested = file_requested[1:]  # Remove '/' from first statement
+                    file_requested = file_requested[1:]  # Removing '/'
 
                     print("Serving web page [", file_requested, "]")
 
@@ -247,7 +247,7 @@ def exit_process():
             import os
             os._exit(1)  # exit from program
         elif cmd == "$time":  # getting time from server
-            print(time.strftime("%A, %m/%d/%Y - %H:%M:%S"))
+            print(time.strftime("%A, %d/%B/%Y - %H:%M:%S"))
 
 
 # *********************************************************************
