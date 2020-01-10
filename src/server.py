@@ -6,7 +6,7 @@ import _thread  # multi-threading
 
 
 myPort = 80  # your own port
-myHost = ""  # your own host
+myHost = "0.0.0.0"  # your own host
 myRoot = "public/"  # your own root (folder for client-side code)
 
 
@@ -42,7 +42,7 @@ def read_body_data(string: str) -> str:
     return result
 
 
-def gen_headers(code, _type: str = None):
+def gen_headers(code, _type: str = None) -> str:
     """ Generates HTTP response Headers. Omits the first line! """
 
     # determine response code
@@ -80,7 +80,7 @@ class Server:
         """ Constructor """
         self.host = myHost  # <-- works on all available network interfaces
         self.port = myPort
-        self.dir = myRoot  # Directory where web-page files are stored
+        self.root = myRoot  # Directory where web-page files are stored
 
         """ Attempts to acquire the socket and launch the server """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -121,7 +121,6 @@ class Server:
         try:
             print("Shutting down the server")
             self.socket.shutdown(socket.SHUT_RDWR)
-
         except Exception as e:
             print("Warning: could not shut down the socket. Maybe it was already closed?", e)
 
@@ -160,18 +159,16 @@ class Server:
 
                     # Load file content
                     try:
-                        file_requested = self.dir + file_requested  # public/...
+                        file_requested = self.root + file_requested  # public/...
                         with open(file_requested, "rb") as file_handler:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
 
                         response_headers = gen_headers(200,
                                                        get_content_type(file_requested))
-
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
                         response_headers = gen_headers(404)
-
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
                                 b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
@@ -206,7 +203,7 @@ class Server:
 
                     # Load file content:
                     try:
-                        file_requested = self.dir + file_requested  # public/...
+                        file_requested = self.root + file_requested  # public/...
                         with open(file_requested, "rb") as file_handler:
                             if request_method == "GET" or request_method == "POST":
                                 response_content = file_handler.read()
@@ -216,7 +213,6 @@ class Server:
                     except Exception as e:  # in case file was not found, generate 404 page
                         print("Warning, file not found. Serving response code 404\n", e, sep='')
                         response_headers = gen_headers(404)
-
                         if request_method == 'GET' or request_method == 'POST':
                             response_content = \
                                 b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
@@ -248,8 +244,6 @@ def exit_process():
             os._exit(1)  # exit from program
         elif cmd == "$time":  # getting time from server
             print(time.strftime("%A, %d/%B/%Y - %H:%M:%S"))
-
-
 # *********************************************************************
 
 
@@ -258,5 +252,5 @@ _thread.start_new_thread(exit_process, ())  # for calling exit_process in other 
 
 print("Starting Web Server")
 print("if you want to exit from program just write \"$exit\" in console!")
-s = Server()  # construct server object
-s.activate_server()  # acquire the socket
+_server = Server()  # construct server object
+_server.activate_server()  # acquire the socket
