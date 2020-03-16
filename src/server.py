@@ -43,7 +43,7 @@ def read_body_data(http: str) -> str:
     return result
 
 
-def gen_headers(code, _type: str = None) -> str:
+def gen_headers(code, length: int, _type: str = None) -> str:
     """ Generates HTTP response Headers. Omits the first line! """
 
     # determine response code
@@ -58,7 +58,8 @@ def gen_headers(code, _type: str = None) -> str:
         current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
         h += 'Date: ' + current_date + '\n'
         h += 'Server: Simple-Python-HTTP-Server\n'
-        h += 'Connection: close\n\n'
+        h += 'Connection: close\n'
+        h += 'Content-Length: %i\n\n' % length
         # signal that the connection will be closed after completing the request
         # \n\n, it's very important between for header and body(because of the http rules)
     else:
@@ -67,7 +68,8 @@ def gen_headers(code, _type: str = None) -> str:
         h += 'Date: ' + current_date + '\n'
         h += 'Content-Type: ' + _type + '\n'
         h += 'Server: Simple-Python-HTTP-Server\n'
-        h += 'Connection: close\n\n'
+        h += 'Connection: close\n'
+        h += 'Content-Length: %i\n\n' % length
         # signal that the connection will be closed after completing the request
         # \n\n, it's very important between for header and body(because of the http rules)
 
@@ -161,15 +163,16 @@ class Server:
                     with open(file_requested, "rb") as file_handler:
                         if request_method == "GET" or request_method == "POST":
                             response_content = file_handler.read()
+                            length = len(response_content)
 
-                    response_headers = gen_headers(200,
+                    response_headers = gen_headers(200, length,
                                                    get_content_type(file_requested))
                 except Exception as e:  # in case file was not found, generate 404 page
                     # print("Warning, file not found. Serving response code 404\n", e, sep='')
-                    response_headers = gen_headers(404)
                     if request_method == 'GET' or request_method == 'POST':
                         response_content = \
                             b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+                    response_headers = gen_headers(404, len(response_content))
 
                 server_response = response_headers.encode()  # return headers for GET, POST and HEAD
                 if request_method == 'GET' or request_method == 'POST':
@@ -185,7 +188,7 @@ class Server:
                     index_of_value = index_of_variable + len("text=")
                     client_msg = data_of_body[index_of_value:]
 
-                    header_resp = gen_headers(200)
+                    header_resp = gen_headers(200, len(client_msg))
                     body_resp = client_msg
 
                     resp = header_resp + body_resp
@@ -205,15 +208,16 @@ class Server:
                     with open(file_requested, "rb") as file_handler:
                         if request_method == "GET" or request_method == "POST":
                             response_content = file_handler.read()
+                            length = len(response_content)
 
-                    response_headers = gen_headers(200,
+                    response_headers = gen_headers(200, length,
                                                    get_content_type(file_requested))
                 except Exception as e:  # in case file was not found, generate 404 page
                     # print("Warning, file not found. Serving response code 404\n", e, sep='')
-                    response_headers = gen_headers(404)
                     if request_method == 'GET' or request_method == 'POST':
                         response_content = \
                             b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+                    response_headers = gen_headers(404, len(response_content))
 
                 server_response = response_headers.encode()  # return headers for GET, Post and HEAD
                 if request_method == 'GET' or request_method == 'POST':
