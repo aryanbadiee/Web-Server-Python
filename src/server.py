@@ -124,26 +124,31 @@ class Server:
 
         # accept:
         while True:
-            print("Awaiting new connection", "-->", end=" ")
-
             connection, address = self.socket.accept()
             # connection - socket (socket)
             # address - client address (tuple)
             # address[0] = ip (str)
             # address[1] = port (int)
 
-            print("Got connection from:", address[0] + ":" + str(address[1]))
-            threading.Thread(target=self.handler, args=(connection, )).start()  # run thread
+            data = connection.recv(1024)  # receive data from client
+            received_data = bytes.decode(data)  # decode it to string
+            parts = received_data.split(" ")  # split with " " on http data
+            request_method = parts[0]
+            req = parts[1]
+            http_v = parts[2].split("\r\n")[0]
 
-    def handler(self, connection):
-        data = connection.recv(1024)  # receive data from client
-        string = bytes.decode(data)  # decode it to string
+            # log:
+            print(address[0] + ":" + str(address[1]),
+                  "[" + time.strftime("%a-%d/%b/%Y %H:%M:%S") + "]",
+                  '"' + request_method, req, http_v + '"', "-")
 
-        request_method = string.split()[0]  # method of request
+            threading.Thread(target=self.handler,
+                             args=(connection, received_data, request_method)).start()  # run thread
 
+    def handler(self, connection, received_data, request_method):
         if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
 
-            file_requested = string.split()[1]  # getting 2nd element(request of client)
+            file_requested = received_data.split()[1]  # getting 2nd element(request of client)
             response_content = b""  # for body of http response(it's binary)
 
             if file_requested == '/' or \
@@ -177,7 +182,7 @@ class Server:
                 connection.close()
 
             elif file_requested == "/msg":
-                data_of_body = read_body_data(string)  # body_data: str
+                data_of_body = read_body_data(received_data)  # body_data: str
                 if (index_of_variable := data_of_body.find("text=")) != -1:
                     index_of_value = index_of_variable + len("text=")
                     client_msg = data_of_body[index_of_value:]
