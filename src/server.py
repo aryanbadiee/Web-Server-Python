@@ -140,8 +140,6 @@ class Server:
         string = bytes.decode(data)  # decode it to string
 
         request_method = string.split()[0]  # method of request
-        # print("Method: ", request_method)
-        # print("*** HTTP DATA RECEIVED ***", string, sep='\n', end="\n\n")
 
         if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
 
@@ -153,9 +151,6 @@ class Server:
                     file_requested == '/main':  # in case no file is specified by the browser
 
                 file_requested = 'index.html'  # load index.html by default
-
-                # file_requested = self.www_dir + file_requested
-                # print("Serving web page [", file_requested, "]")
 
                 # Load file content
                 try:
@@ -179,7 +174,6 @@ class Server:
                     server_response += response_content  # return additional content for GET, POST only
 
                 connection.send(server_response)
-                # print("Closing connection with client")
                 connection.close()
 
             elif file_requested == "/msg":
@@ -199,8 +193,6 @@ class Server:
 
             else:
                 file_requested = file_requested[1:]  # Removing '/'
-
-                # print("Serving web page [", file_requested, "]")
 
                 # Load file content:
                 try:
@@ -224,10 +216,7 @@ class Server:
                     server_response += response_content  # return additional content for GET, POST only
 
                 connection.send(server_response)
-                # print("Closing connection with client")
                 connection.close()
-
-            # print("----------------------------------------")
 
     def shutdown(self):
         """ Shut down the server """
