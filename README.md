@@ -1,7 +1,7 @@
 # Web-Server-Python
  a web server with socket programming in python
 
-Features:
+### Features:
 
 * fast and simple
 * very flexible
