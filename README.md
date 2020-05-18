@@ -2,7 +2,7 @@
  a web server with socket programming in python
 
 ### Features:
-
+--------
 * fast and simple
 * very flexible
 * light
