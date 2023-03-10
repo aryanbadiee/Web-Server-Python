@@ -1,7 +1,7 @@
 # Web-Server-Python
 A simple web server with socket programming in Python
 
-### Features:
+### Features
 * Light and simple
 * Very flexible
 * Multi-Threading support
