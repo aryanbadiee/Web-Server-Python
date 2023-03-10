@@ -1,11 +1,9 @@
 # Web-Server-Python
- a web server with socket programming in python
+A simple web server with socket programming in Python
 
 ### Features:
---------
-* fast and simple
-* very flexible
-* light
-* support from multi-threading
-* with the client-side code(for testing!)
-* support for GET & POST Method
+* Light and simple
+* Very flexible
+* Multi-Threading support
+* Includes client-side code (for testing!)
+* Support for `GET` and `POST` methods
