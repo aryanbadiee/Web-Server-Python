@@ -1,14 +1,12 @@
-# @author -> https://www.github.com/aryanbadiee
+"""
+A web-server with socket programming in Python
 
-import socket  # Networking support
-import time  # Current time
-import _thread  # multi-threading
-import threading  # new library of multi-thread
+Author: https://github.com/aryanbadiee
+"""
 
-
-myPort = 80  # your own port
-myHost = "0.0.0.0"  # your own host
-myRoot = "public/"  # your own root (folder for client-side code)
+import socket
+import time
+import threading
 
 
 def get_content_type(file_requested: str) -> str:
@@ -24,12 +22,12 @@ def get_content_type(file_requested: str) -> str:
         return "image/jpeg"
     elif file_requested.__contains__(".mp3"):
         return "audio/mpeg"
+
     # You can add support for other file formats - Like above!
 
 
-# for getting data from body of HTTP:
 def read_body_data(http: str) -> str:
-    lines = http.splitlines()
+    lines = http.splitlines(keepends=False)
 
     result = ""  # for return
     flag = False
@@ -46,7 +44,6 @@ def read_body_data(http: str) -> str:
 def gen_headers(code, length: int, _type: str = None) -> str:
     """ Generates HTTP response Headers. Omits the first line! """
 
-    # determine response code
     h = ''
     if code == 200:
         h = 'HTTP/1.1 200 OK\n'
@@ -54,39 +51,32 @@ def gen_headers(code, length: int, _type: str = None) -> str:
         h = 'HTTP/1.1 404 Not Found\n'
 
     if _type is None:
-        # write further headers
-        current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        current_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime())
         h += 'Date: ' + current_date + '\n'
         h += 'Server: Simple-Python-HTTP-Server\n'
         h += 'Connection: close\n'
         h += 'Content-Length: %i\n\n' % length
-        # signal that the connection will be closed after completing the request
-        # \n\n, it's very important between for header and body(because of the http rules)
+        # \n\n, it's very important between header and body (because of the HTTP rules)
     else:
-        # write further headers
-        current_date = time.strftime("%a, %d %b %Y %H:%M:%S", time.localtime())
+        current_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime())
         h += 'Date: ' + current_date + '\n'
         h += 'Content-Type: ' + _type + '\n'
         h += 'Server: Simple-Python-HTTP-Server\n'
         h += 'Connection: close\n'
         h += 'Content-Length: %i\n\n' % length
-        # signal that the connection will be closed after completing the request
-        # \n\n, it's very important between for header and body(because of the http rules)
+        # \n\n, it's very important between header and body (because of the HTTP rules)
 
     return h
 
 
 class Server:
-    """ Class describing a simple HTTP server objects."""
+    """ Class describing a simple HTTP server objects """
 
-    def __init__(self, host: str = myHost, port: int = myPort):
-        """ Constructor """
-
+    def __init__(self, host: str = "localhost", port: int = 80):
         self.host = host
         self.port = port
-        self.root = myRoot  # Directory where web-page files are stored
+        self.root = "public/"  # The directory where the web-page files are stored
 
-        """ Attempts to acquire the socket and launch the server """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # SOCK_STREAM = TCP Protocol
         # SOCK_DGRAM = UDP Protocol
@@ -94,35 +84,34 @@ class Server:
         # AF_INET6 = using ipv6
 
     def run(self):
-        # user provided in the __init__() port may be unavailable:
         try:
             self.socket.bind((self.host, self.port))
-        except Exception as e:
-            print("Warning: Could not acquire port:", self.port, "\n")
-            print("I will try a higher port")
-            print(e)
-            # store to user provided port locally for later (in case 8080 fails)
+        except Exception as ex:
+            print("Cannot acquire port", self.port)
+            print("I'll try another port")
+            print(ex)
+
             user_port = self.port
             self.port = 8080
 
             try:
-                print("Launching HTTP server on ", self.host, ":", self.port)
+                print("Launching HTTP server on", self.host + ":" + str(self.port))
                 self.socket.bind((self.host, self.port))
-            except Exception as e:
-                print("ERROR: Failed to acquire sockets for ports ", user_port, " and 8080. ")
-                print("Try running the Server in a privileged user mode.")
-                print(e)
-                self.shutdown()
+            except Exception as ex:
+                print("Failed to acquire sockets for ports", user_port, "and 8080!")
+                print("Try running the server in a privileged user mode")
+                print(ex)
+
+                self.socket.close()
+
                 import sys
-                sys.exit(1)
+                sys.exit(3)
 
-        print("Server acquired successfully the socket with port:", self.port)
-        print("-----------------------------------------------------")
+        print("Server acquired successfully the socket with port", self.port)
+        print('-' * 20)
 
-        # listen:
-        self.socket.listen(5)  # maximum number of queued connections
+        self.socket.listen(5)  # Maximum number of connections in the queue
 
-        # accept:
         while True:
             connection, address = self.socket.accept()
             # connection - socket (socket)
@@ -130,59 +119,54 @@ class Server:
             # address[0] = ip (str)
             # address[1] = port (int)
 
-            data = connection.recv(1024)  # receive data from client
-            received_data = bytes.decode(data)  # decode it to string
-            parts = received_data.split(" ")  # split with " " on http data
+            data = connection.recv(1024)  # Receive data from client
+            received_data = bytes.decode(data)  # Decode it to string
+
+            parts = received_data.split(' ')  # Split with ' ' on HTTP data
             request_method = parts[0]
             req = parts[1]
             http_v = parts[2].split("\r\n")[0]
 
-            # log:
             print(address[0] + ":" + str(address[1]),
-                  "[" + time.strftime("%a-%d/%b/%Y %H:%M:%S") + "]",
-                  '"' + request_method, req, http_v + '"', "-")
+                  "[" + time.strftime("%A, %Y-%m-%d %H:%M:%S") + "]",
+                  '"' + request_method, req, http_v + '"', "-")  # Logging
 
             threading.Thread(target=self.handler,
-                             args=(connection, received_data, request_method)).start()  # run thread
+                             args=(connection, received_data, request_method),
+                             daemon=True).start()  # Run thread
 
     def handler(self, connection, received_data, request_method):
-        if (request_method == 'GET') or (request_method == 'HEAD') or (request_method == 'POST'):
-
-            file_requested = received_data.split()[1]  # getting 2nd element(request of client)
-            response_content = b""  # for body of http response(it's binary)
+        if (request_method == 'GET') or \
+                (request_method == 'POST'):
+            file_requested = received_data.split()[1]  # Request of the client
 
             if file_requested == '/' or \
                     file_requested == '/index' or \
-                    file_requested == '/main':  # in case no file is specified by the browser
+                    file_requested == '/main':
+                file_requested = 'index.html'  # Load index.html by default!
 
-                file_requested = 'index.html'  # load index.html by default
-
-                # Load file content
+                # Load file content:
                 try:
                     file_requested = self.root + file_requested  # public/...
                     with open(file_requested, "rb") as file_handler:
-                        if request_method == "GET" or request_method == "POST":
-                            response_content = file_handler.read()
-                            length = len(response_content)
+                        response_content = file_handler.read()
+                        length = len(response_content)
 
-                    response_headers = gen_headers(200, length,
-                                                   get_content_type(file_requested))
-                except Exception as e:  # in case file was not found, generate 404 page
-                    # print("Warning, file not found. Serving response code 404\n", e, sep='')
-                    if request_method == 'GET' or request_method == 'POST':
-                        response_content = \
-                            b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+                    response_headers = gen_headers(200, length, get_content_type(file_requested))
+                except Exception as ex:  # The file not found!
+                    print("The file not found. Serving response code 404\n", ex, sep=" | ")
+                    response_content = \
+                        b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+
                     response_headers = gen_headers(404, len(response_content))
 
-                server_response = response_headers.encode()  # return headers for GET, POST and HEAD
-                if request_method == 'GET' or request_method == 'POST':
-                    server_response += response_content  # return additional content for GET, POST only
+                server_response = response_headers.encode()
+                server_response += response_content
 
                 connection.send(server_response)
                 connection.close()
-
             elif file_requested == "/msg":
-                data_of_body = read_body_data(received_data)  # body_data: str
+                data_of_body = read_body_data(received_data)
                 if (index_of_variable := data_of_body.find("text=")) != -1:
                     index_of_value = index_of_variable + len("text=")
                     client_msg = data_of_body[index_of_value:]
@@ -195,68 +179,33 @@ class Server:
 
                     connection.send(resp)
                 connection.close()
-
             else:
-                file_requested = file_requested[1:]  # Removing '/'
+                file_requested = file_requested[1:]  # Remove '/'
 
                 # Load file content:
                 try:
                     file_requested = self.root + file_requested  # public/...
                     with open(file_requested, "rb") as file_handler:
-                        if request_method == "GET" or request_method == "POST":
-                            response_content = file_handler.read()
-                            length = len(response_content)
+                        response_content = file_handler.read()
+                        length = len(response_content)
 
-                    response_headers = gen_headers(200, length,
-                                                   get_content_type(file_requested))
-                except Exception as e:  # in case file was not found, generate 404 page
-                    # print("Warning, file not found. Serving response code 404\n", e, sep='')
-                    if request_method == 'GET' or request_method == 'POST':
-                        response_content = \
-                            b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+                    response_headers = gen_headers(200, length, get_content_type(file_requested))
+                except Exception as ex:  # The file not found!
+                    print("The file not found. Serving response code 404\n", ex, sep=" | ")
+                    response_content = \
+                        b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+
                     response_headers = gen_headers(404, len(response_content))
 
-                server_response = response_headers.encode()  # return headers for GET, Post and HEAD
-                if request_method == 'GET' or request_method == 'POST':
-                    server_response += response_content  # return additional content for GET, POST only
+                server_response = response_headers.encode()
+                server_response += response_content
 
                 connection.send(server_response)
                 connection.close()
 
-    def shutdown(self):
-        """ Shut down the server """
 
-        try:
-            print("Shutting down the server")
-            self.socket.shutdown(socket.SHUT_RDWR)
-        except Exception as e:
-            print("Warning: could not shut down the socket. Maybe it was already closed?", e)
+if __name__ == "__main__":
+    print("Starting Web Server\n")
 
-    def graceful_shutdown(self):
-        """ This function shuts down the server. It's triggered
-        by SIGINT signal """
-
-        self.shutdown()  # shut down the server
-        import sys
-        sys.exit(1)
-
-
-# *********************************************************************
-def exit_process():
-    while True:
-        cmd = input()
-        if cmd == "$exit":
-            import os
-            os._exit(1)  # exit from program
-        elif cmd == "$time":  # getting time from server
-            print(time.strftime("%A, %d/%B/%Y - %H:%M:%S"))
-# *********************************************************************
-
-
-_thread.start_new_thread(exit_process, ())  # for calling exit_process in other thread
-# () is an empty tuple
-
-print("Starting Web Server")
-print("if you want to exit from program just write \"$exit\" in console!")
-serv = Server("0.0.0.0", 80)  # construct server object
-serv.run()  # acquire the socket
+    serv = Server()
+    serv.run()
