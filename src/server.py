@@ -7,75 +7,66 @@ Author: https://github.com/aryanbadiee
 import socket
 import time
 import threading
+from os import path
 
 
-def get_content_type(file_requested: str) -> str:
-    if file_requested.__contains__(".htm") or file_requested.__contains__(".html"):
+def get_content_type(request: str, /) -> str:
+    """ Returns the appropriate Content-Type based on file extension. """
+
+    if request.endswith((".htm", ".html")):
         return "text/html"
-    elif file_requested.__contains__(".css"):
+    elif request.endswith(".css"):
         return "text/css"
-    elif file_requested.__contains__(".js"):
+    elif request.endswith(".js"):
         return "text/javascript"
-    elif file_requested.__contains__(".png"):
+    elif request.endswith(".png"):
         return "image/png"
-    elif file_requested.__contains__(".jpg") or file_requested.__contains__(".jpeg"):
+    elif request.endswith((".jpg", ".jpeg")):
         return "image/jpeg"
-    elif file_requested.__contains__(".mp3"):
+    elif request.endswith(".mp3"):
         return "audio/mpeg"
-
-    # You can add support for other file formats - Like above!
-
-
-def read_body_data(http: str) -> str:
-    lines = http.splitlines(keepends=False)
-
-    result = ""  # for return
-    flag = False
-
-    for line in lines:
-        if line == "":  # means empty line between header and body in HTTP
-            flag = True
-        elif flag:
-            result += line
-
-    return result
-
-
-def gen_headers(code, length: int, _type: str = None) -> str:
-    """ Generates HTTP response Headers. Omits the first line! """
-
-    h = ''
-    if code == 200:
-        h = 'HTTP/1.1 200 OK\n'
-    elif code == 404:
-        h = 'HTTP/1.1 404 Not Found\n'
-
-    if _type is None:
-        current_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime())
-        h += 'Date: ' + current_date + '\n'
-        h += 'Server: Simple-Python-HTTP-Server\n'
-        h += 'Connection: close\n'
-        h += 'Content-Length: %i\n\n' % length
-        # \n\n, it's very important between header and body (because of the HTTP rules)
     else:
-        current_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime())
-        h += 'Date: ' + current_date + '\n'
-        h += 'Content-Type: ' + _type + '\n'
-        h += 'Server: Simple-Python-HTTP-Server\n'
-        h += 'Connection: close\n'
-        h += 'Content-Length: %i\n\n' % length
-        # \n\n, it's very important between header and body (because of the HTTP rules)
+        return "text/plain"  # Default
 
-    return h
+
+def read_body(http: str, /) -> str:
+    """ Extracts body from raw HTTP data. """
+
+    parts = http.split("\r\n\r\n", 1)
+
+    return parts[1] if len(parts) > 1 else ""
+
+
+def gen_headers(code: int, length: int, content_type: str, /) -> str:
+    """ Generates HTTP response headers. """
+
+    status_messages = {
+        200: "200 OK",
+        404: "404 Not Found",
+    }
+
+    response_line = f"HTTP/1.1 {status_messages.get(code, '200 OK')}\n"
+    current_date = time.strftime("%A, %Y-%m-%d %H:%M:%S", time.localtime())
+
+    headers = (
+        f"Date: {current_date}\n"
+        f"Content-Type: {content_type}\n"
+        f"Server: Simple-Python-HTTP-Server\n"
+        f"Connection: close\n"
+        f"Content-Length: {length}\n\n"
+    )
+
+    return response_line + headers
 
 
 class Server:
     """ Class describing a simple HTTP server objects """
 
-    def __init__(self, host: str = "localhost", port: int = 80):
+    def __init__(self, host: str = "127.0.0.1", port: int = 80):
         self.host = host
         self.port = port
-        self.root = "public/"  # The directory where the web-page files are stored
+        self.root = "./public"  # The directory where the web-page files are stored
+        self.buffer_size = 2_048
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # SOCK_STREAM = TCP Protocol
@@ -88,19 +79,18 @@ class Server:
             self.socket.bind((self.host, self.port))
         except Exception as ex:
             print("Cannot acquire port", self.port)
-            print("I'll try another port")
             print(ex)
+            print("I'll try another port")
 
-            user_port = self.port
             self.port = 8080
 
             try:
                 print("Launching HTTP server on", self.host + ":" + str(self.port))
                 self.socket.bind((self.host, self.port))
             except Exception as ex:
-                print("Failed to acquire sockets for ports", user_port, "and 8080!")
-                print("Try running the server in a privileged user mode")
+                print("Failed to get socket for port", self.port)
                 print(ex)
+                print("Try running the server in a privileged user mode")
 
                 self.socket.close()
 
@@ -119,93 +109,100 @@ class Server:
             # address[0] = ip (str)
             # address[1] = port (int)
 
-            data = connection.recv(1024)  # Receive data from client
-            received_data = bytes.decode(data)  # Decode it to string
+            data = connection.recv(self.buffer_size)  # Receives data from client
+            received_data = bytes.decode(data)  # Decodes it to string
 
-            parts = received_data.split(' ')  # Split with ' ' on HTTP data
-            request_method = parts[0]
-            req = parts[1]
-            http_v = parts[2].split("\r\n")[0]
+            http_method, uri, http_version = received_data.splitlines(keepends=False)[0].split()
 
-            print(address[0] + ":" + str(address[1]),
-                  "[" + time.strftime("%A, %Y-%m-%d %H:%M:%S") + "]",
-                  '"' + request_method, req, http_v + '"', "-")  # Logging
+            print(address[0] + ':' + str(address[1]),
+                  '[' + time.strftime("%A, %Y-%m-%d %H:%M:%S") + ']',
+                  '"' + http_method, uri, http_version + '"', '-')  # Logging
 
             threading.Thread(target=self.handler,
-                             args=(connection, received_data, request_method),
+                             args=(connection, http_method, uri, received_data),
                              daemon=True).start()  # Run thread
 
-    def handler(self, connection, received_data, request_method):
-        if (request_method == 'GET') or \
-                (request_method == 'POST'):
-            file_requested = received_data.split()[1]  # Request of the client
+    def handler(self, connection: socket.socket,
+                http_method: str, uri: str, received_data: str, /):
+        if http_method == "GET" or http_method == "POST":
+            if uri == '/' or \
+                    uri == '/index' or \
+                    uri == '/main':
+                request = 'index.html'  # Loads index.html by default!
 
-            if file_requested == '/' or \
-                    file_requested == '/index' or \
-                    file_requested == '/main':
-                file_requested = 'index.html'  # Load index.html by default!
-
-                # Load file content:
+                # Loads file content
                 try:
-                    file_requested = self.root + file_requested  # public/...
-                    with open(file_requested, "rb") as file_handler:
-                        response_content = file_handler.read()
+                    request_path = path.join(self.root, request)
+                    with open(request_path, "rb") as file:
+                        response_content = file.read()
                         length = len(response_content)
 
-                    response_headers = gen_headers(200, length, get_content_type(file_requested))
-                except Exception as ex:  # The file not found!
-                    print("The file not found. Serving response code 404\n", ex, sep=" | ")
+                    response_headers = gen_headers(200,
+                                                   length,
+                                                   get_content_type(request_path))
+                except Exception as ex:  # File not found!
+                    print("404 not found error!", ex,
+                          sep='\n', end='\n' + '-' * 20 + '\n')
                     response_content = \
                         b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                    response_headers = gen_headers(404, len(response_content))
+                    response_headers = gen_headers(404,
+                                                   len(response_content),
+                                                   get_content_type(".html"))
 
                 server_response = response_headers.encode()
                 server_response += response_content
 
                 connection.send(server_response)
-                connection.close()
-            elif file_requested == "/msg":
-                data_of_body = read_body_data(received_data)
-                if (index_of_variable := data_of_body.find("text=")) != -1:
+            elif uri == "/msg":
+                body_data = read_body(received_data)
+                if (index_of_variable := body_data.find("text=")) != -1:
                     index_of_value = index_of_variable + len("text=")
-                    client_msg = data_of_body[index_of_value:]
+                    client_msg = body_data[index_of_value:]
 
-                    header_resp = gen_headers(200, len(client_msg))
+                    header_resp = gen_headers(200,
+                                              len(client_msg),
+                                              get_content_type("plain"))
                     body_resp = client_msg
 
                     resp = header_resp + body_resp
                     resp = resp.encode("UTF-8")
 
                     connection.send(resp)
-                connection.close()
             else:
-                file_requested = file_requested[1:]  # Remove '/'
+                request = uri.removeprefix('/')  # Removes '/' from the beginning!
 
-                # Load file content:
+                # Loads file content
                 try:
-                    file_requested = self.root + file_requested  # public/...
-                    with open(file_requested, "rb") as file_handler:
-                        response_content = file_handler.read()
+                    request_path = path.join(self.root, request)
+
+                    with open(request_path, "rb") as file:
+                        response_content = file.read()
                         length = len(response_content)
 
-                    response_headers = gen_headers(200, length, get_content_type(file_requested))
-                except Exception as ex:  # The file not found!
-                    print("The file not found. Serving response code 404\n", ex, sep=" | ")
+                    response_headers = gen_headers(200,
+                                                   length,
+                                                   get_content_type(request_path))
+                except Exception as ex:  # File not found!
+                    print("404 not found error!", ex,
+                          sep='\n', end='\n' + '-' * 20 + '\n')
                     response_content = \
                         b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                    response_headers = gen_headers(404, len(response_content))
+                    response_headers = gen_headers(404,
+                                                   len(response_content),
+                                                   get_content_type(".html"))
 
                 server_response = response_headers.encode()
                 server_response += response_content
 
                 connection.send(server_response)
-                connection.close()
+
+        connection.close()
 
 
 if __name__ == "__main__":
-    print("Starting Web Server\n")
+    print("Starting Web Server...", end='\n' * 2)
 
     serv = Server()
     serv.run()
